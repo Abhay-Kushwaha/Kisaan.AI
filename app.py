@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 import pickle
 import numpy as np
 import json
@@ -162,6 +162,10 @@ def breast_cancer():
 def analytics():
     analytics_data = get_analytics_data()
     return render_template('analytics.html', analytics=analytics_data)
+
+@app.route('/maps/<path:filename>')
+def maps(filename):
+    return send_from_directory('maps', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)

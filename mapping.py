@@ -8,7 +8,7 @@ def get_analytics_data():
     """
     base_metrics = "analytics"
     base_plots = "analytics"  # relative to static/
-    maps_folder = os.path.join("static", "maps")
+    maps_folder = "maps"
     models = [
         ("crop_recommendation", "Crop Recommendation"),
         ("crop_price", "Crop Price"),
@@ -19,7 +19,8 @@ def get_analytics_data():
     analytics_data = {}
     for key, display_name in models:
         metrics_path = os.path.join(base_metrics, f"{key}_metrics.json")
-        plot_path = f"{base_plots}/{key}_feature_importance.png"
+        plot_path = f"maps/{key}_feature_importance.png"
+        # plot_path = f"{base_plots}/{key}_feature_importance.png"
         # Collect all maps for this model
         maps_list = []
         if os.path.isdir(maps_folder):
