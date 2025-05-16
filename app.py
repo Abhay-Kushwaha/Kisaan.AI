@@ -18,16 +18,14 @@ def crop_price():
     state_encoder = pickle.load(open("model/state_encoder.pkl", "rb"))
     crop_encoder = pickle.load(open("model/crop_encoder.pkl", "rb"))
     crop_price_model = pickle.load(open("model/crop_price_model.pkl", "rb"))
-
     unique_states = sorted(df['State'].unique())
     unique_crops = sorted(df['Crop'].unique())
-    
     if request.method == 'POST':
         try:
             state = request.form['State']
             crop = request.form['Crop']
-            cost1 = float(request.form['CostCultivation'])
-            cost2 = float(request.form['CostCultivation2'])
+            cost1 = float(request.form['CostCultivation']) #Crop amount in per hectare
+            cost2 = float(request.form['CostCultivation2']) # Labour cost
             production = float(request.form['Production'])
             yield_amt = float(request.form['Yield'])
             temperature = float(request.form['Temperature'])
@@ -37,10 +35,8 @@ def crop_price():
             features = np.array([[encoded_state, encoded_crop, cost1, cost2, production, yield_amt, temperature, rainfall]])
             prediction = crop_price_model.predict(features)[0]
             return render_template('crop_price.html', prediction=round(prediction, 2), states=unique_states, crops=unique_crops)
-
         except Exception as e:
             return render_template('crop_price.html', prediction=f"Error: {str(e)}", states=unique_states, crops=unique_crops)
-        
     return render_template('crop_price.html',
                            states=unique_states,
                            crops=unique_crops)
@@ -58,7 +54,6 @@ def crop():
 def disease():
     with open("dataset/symptoms.json", "r") as f:
         symptoms_list = json.load(f)
-
     if request.method == 'POST':
         user_symptoms = request.form.getlist("symptoms[]")  # Get symptoms as a list
         days = int(request.form.get("days", 5))
@@ -83,11 +78,10 @@ def disease():
 @app.route('/breast_cancer', methods=['GET', 'POST'])
 def breast_cancer():
     breast_cancer_model = pickle.load(open("model/breast_cancer_model.pkl", "rb"))
-
     features = [
-    'mean radius', 'mean texture', 'mean perimeter', 'mean area',
-    'mean smoothness', 'mean compactness', 'mean concavity',
-    'mean concave points', 'mean symmetry', 'mean fractal dimension'
+    'mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area',
+    'mean_smoothness', 'mean_compactness', 'mean_concavity',
+    'mean_concave_points', 'mean_symmetry', 'mean_fractal_dimension'
 ]
     values = []
     result = None
