@@ -2,9 +2,11 @@ from flask import Flask, render_template, request, jsonify
 import pickle
 import numpy as np
 import json
+import joblib
 import pandas as pd
 from disease import predict_disease
 from sklearn.datasets import load_breast_cancer
+from mapping import get_analytics_data
 
 app = Flask(__name__)
 
@@ -58,6 +60,63 @@ def crop():
         return render_template('crop.html', prediction=prediction[0])
     return render_template('crop.html')
 
+@app.route('/fertilizer', methods=['GET', 'POST'])
+def fertilizer():
+    df = pd.read_csv('dataset/fertilizer.csv')
+    unique_soil = sorted(df['Soil'].unique())
+    unique_crops = sorted(df['Crop'].unique())
+    prediction = None
+    remark = None
+    if request.method == 'POST':
+        try:
+            soil = request.form.get('Soil', '').strip().title()
+            crop = request.form.get('Crop', '').strip().lower()
+            if not soil or not crop:
+                prediction = "Please select both Soil and Crop."
+                return render_template('fertilizer.html', prediction=prediction, remark=remark, soils=unique_soil, crops=unique_crops)
+
+            features = [
+                float(request.form.get('temperature', 0)),
+                float(request.form.get('moisture', 0)),
+                float(request.form.get('rainfall', 0)),
+                float(request.form.get('ph', 0)),
+                float(request.form.get('nitrogen', 0)),
+                float(request.form.get('phosphorous', 0)),
+                float(request.form.get('potassium', 0)),
+                float(request.form.get('carbon', 0)),
+                soil,
+                crop
+            ]
+
+            soil_encoder = joblib.load('model/soil_encoder.pkl')
+            crop_encoder = joblib.load('model/fertilizer_crop_encoder.pkl')
+            fertilizer_encoder = joblib.load('model/fertilizer_encoder.pkl')
+            scaler = joblib.load('model/fertilizer_scaler.pkl')
+            model = joblib.load('model/fertilizer_model.pkl')
+            df = pd.read_csv('dataset/fertilizer.csv')
+
+            # Encode soil and crop
+            features[8] = soil_encoder.transform([features[8]])[0]
+            features[9] = crop_encoder.transform([features[9]])[0]
+
+            # Use DataFrame with correct columns for scaling
+            feature_columns = [
+                'Temperature', 'Moisture', 'Rainfall', 'PH', 'Nitrogen',
+                'Phosphorous', 'Potassium', 'Carbon', 'Soil', 'Crop'
+            ]
+            features_df = pd.DataFrame([features], columns=feature_columns)
+            scaled_features = scaler.transform(features_df)
+
+            prediction_encoded = model.predict(scaled_features)[0]
+            prediction = fertilizer_encoder.inverse_transform([prediction_encoded])[0]
+
+            # Get remark safely
+            remark_row = df[df['Fertilizer'] == prediction]
+            remark = remark_row['Remark'].values[0] if not remark_row.empty else "No remark found."
+        except Exception as e:
+            prediction = "Error: " + str(e)
+    return render_template('fertilizer.html', prediction=prediction, remark=remark, soils=unique_soil, crops=unique_crops)
+
 @app.route('/disease', methods=['GET', 'POST'])
 def disease():
     with open("dataset/symptoms.json", "r") as f:
@@ -98,6 +157,11 @@ def breast_cancer():
         prediction = breast_cancer_model.predict([values])[0]
         result = "Malignant (Cancer)" if prediction == 0 else "Benign (Non-Cancerous)"
     return render_template('breast_cancer.html', features=features, values=values, result=result)
+
+@app.route('/analytics')
+def analytics():
+    analytics_data = get_analytics_data()
+    return render_template('analytics.html', analytics=analytics_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
