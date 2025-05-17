@@ -160,14 +160,16 @@ def Train_Disease():
     save_metrics(metrics, "analytics/disease_metrics.json")
     with open('model/disease_model.pkl', 'wb') as f:
         pickle.dump((model, mlb), f)
-    # Confusion Matrix
-    plt.figure(figsize=(8,6))
-    cm = confusion_matrix(y_test, y_pred, labels=np.unique(y))
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y))
-    disp.plot(include_values=False, cmap='Blues', ax=plt.gca(), xticks_rotation=45)
-    plt.title("Disease Confusion Matrix")
+    # True vs Predicted plot
+    plt.figure(figsize=(10,5))
+    plt.scatter(range(len(y_test)), y_test, label='True', alpha=0.7, marker='o')
+    plt.scatter(range(len(y_pred)), y_pred, label='Predicted', alpha=0.7, marker='x')
+    plt.title("Disease: True vs Predicted (Test Set)")
+    plt.xlabel("Sample Index")
+    plt.ylabel("Disease Label (encoded)")
+    plt.legend()
     plt.tight_layout()
-    plt.savefig("maps/disease_confusion_matrix.png")
+    plt.savefig("maps/disease_true_vs_pred.png")
     plt.close()
 
 def Train_Breast_Cancer():
@@ -208,6 +210,6 @@ def Train_Breast_Cancer():
 # call function
 # Train_Crop_Recommendation()
 # Train_Crop_Price()
-# Train_Disease()
+Train_Disease()
 # Train_Breast_Cancer()
 # Train_Fertilizer()
