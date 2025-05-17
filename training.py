@@ -3,12 +3,16 @@ import pickle
 import joblib
 import json
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer, StandardScaler
 from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, mean_squared_error, r2_score, f1_score, root_mean_squared_error
+from sklearn.metrics import (
+    accuracy_score, mean_squared_error, r2_score, f1_score, root_mean_squared_error,
+    confusion_matrix, ConfusionMatrixDisplay
+)
 
 def save_metrics(metrics, filename):
     with open(filename, "w") as f:
@@ -27,19 +31,20 @@ def Train_Crop_Recommendation():
     accuracy = accuracy_score(y_test, y_pred)
     f1_value = f1_score(y_test, y_pred, average='weighted')
     metrics = {
-        "accuracy": round(accuracy, 4),
-        "f1_score": round(f1_value, 4)
+        "accuracy": round(accuracy, 4)*100,
+        "f1_score": round(f1_value, 4)*100
     }
     save_metrics(metrics, "analytics/crop_recommendation_metrics.json")
     with open("model/crop_predict_model.pkl", "wb") as f:
         pickle.dump(model, f)
-    # Feature importance plot
-    plt.figure(figsize=(8,4))
-    plt.bar(features, model.feature_importances_)
-    plt.title("Crop Recommendation Feature Importance")
-    plt.ylabel("Importance")
+    # Confusion Matrix
+    plt.figure(figsize=(8,6))
+    cm = confusion_matrix(y_test, y_pred, labels=np.unique(y))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y))
+    disp.plot(include_values=False, cmap='Blues', ax=plt.gca(), xticks_rotation=45)
+    plt.title("Crop Recommendation Confusion Matrix")
     plt.tight_layout()
-    plt.savefig("maps/crop_recommendation_feature_importance.png")
+    plt.savefig("maps/crop_recommendation_confusion_matrix.png")
     plt.close()
 
 def Train_Crop_Price():
@@ -71,13 +76,26 @@ def Train_Crop_Price():
         pickle.dump(le_state, f)
     with open("model/crop_encoder.pkl", "wb") as f:
         pickle.dump(le_crop, f)
-    # Feature importance plot
-    plt.figure(figsize=(10,4))
-    plt.bar(features, model.feature_importances_)
-    plt.title("Crop Price Feature Importance")
-    plt.ylabel("Importance")
+    # Actual vs Predicted
+    plt.figure(figsize=(8,6))
+    plt.scatter(y_test, y_pred, alpha=0.6)
+    plt.xlabel("Actual Price")
+    plt.ylabel("Predicted Price")
+    plt.title("Crop Price: Actual vs Predicted")
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'r--')
     plt.tight_layout()
-    plt.savefig("maps/crop_price_feature_importance.png")
+    plt.savefig("maps/crop_price_actual_vs_pred.png")
+    plt.close()
+    # Residual Matrix
+    residuals = y_test - y_pred
+    plt.figure(figsize=(8,6))
+    plt.scatter(y_pred, residuals, alpha=0.6)
+    plt.axhline(0, color='red', linestyle='--')
+    plt.xlabel("Predicted Price")
+    plt.ylabel("Residuals")
+    plt.title("Crop Price: Residual Matrix")
+    plt.tight_layout()
+    plt.savefig("maps/crop_price_residual_matrix.png")
     plt.close()
 
 def Train_Fertilizer():
@@ -107,18 +125,19 @@ def Train_Fertilizer():
     accuracy = accuracy_score(y_test, y_pred)
     f1_value = f1_score(y_test, y_pred, average='weighted')
     metrics = {
-        "accuracy": round(accuracy, 4),
-        "f1_score": round(f1_value, 4)
+        "accuracy": round(accuracy, 4)*100,
+        "f1_score": round(f1_value, 4)*100
     }
     save_metrics(metrics, "analytics/fertilizer_metrics.json")
     joblib.dump(model, 'model/fertilizer_model.pkl')
-    # Feature importance (coefficients)
-    plt.figure(figsize=(10,4))
-    plt.bar(X.columns, abs(model.coef_).mean(axis=0))
-    plt.title("Fertilizer Feature Importance (mean abs coef)")
-    plt.ylabel("Mean |Coefficient|")
+    # Confusion Matrix
+    plt.figure(figsize=(8,6))
+    cm = confusion_matrix(y_test, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot(include_values=False, cmap='Blues', ax=plt.gca())
+    plt.title("Fertilizer Confusion Matrix")
     plt.tight_layout()
-    plt.savefig("maps/fertilizer_feature_importance.png")
+    plt.savefig("maps/fertilizer_confusion_matrix.png")
     plt.close()
 
 def Train_Disease():
@@ -135,25 +154,21 @@ def Train_Disease():
     accuracy = accuracy_score(y_test, y_pred)
     f1_value = f1_score(y_test, y_pred, average='weighted')
     metrics = {
-        "accuracy": round(accuracy, 4),
-        "f1_score": round(f1_value, 4)
+        "accuracy": round(accuracy, 4)*100,
+        "f1_score": round(f1_value, 4)*100
     }
     save_metrics(metrics, "analytics/disease_metrics.json")
     with open('model/disease_model.pkl', 'wb') as f:
         pickle.dump((model, mlb), f)
-    # Plot top 10 most important symptoms
-    if hasattr(model, "feature_importances_"):
-        import numpy as np
-        importances = model.feature_importances_
-        indices = np.argsort(importances)[::-1][:10]
-        plt.figure(figsize=(10,4))
-        plt.bar([mlb.classes_[i] for i in indices], importances[indices])
-        plt.title("Disease Model: Top 10 Symptom Importances")
-        plt.ylabel("Importance")
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
-        plt.savefig("maps/disease_feature_importance.png")
-        plt.close()
+    # Confusion Matrix
+    plt.figure(figsize=(8,6))
+    cm = confusion_matrix(y_test, y_pred, labels=np.unique(y))
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=np.unique(y))
+    disp.plot(include_values=False, cmap='Blues', ax=plt.gca(), xticks_rotation=45)
+    plt.title("Disease Confusion Matrix")
+    plt.tight_layout()
+    plt.savefig("maps/disease_confusion_matrix.png")
+    plt.close()
 
 def Train_Breast_Cancer():
     data = load_breast_cancer()
@@ -174,20 +189,20 @@ def Train_Breast_Cancer():
     acc = accuracy_score(y_test, y_pred)
     f1 = f1_score(y_test, y_pred)
     metrics = {
-        "accuracy": round(acc, 4),
-        "f1_score": round(f1, 4)
+        "accuracy": round(acc, 4)*100,
+        "f1_score": round(f1, 4)*100
     }
     save_metrics(metrics, "analytics/breast_cancer_metrics.json")
     with open("model/breast_cancer_model.pkl", "wb") as f:
         pickle.dump(model, f)
-    # Feature importance plot
-    plt.figure(figsize=(10,4))
-    plt.bar(top_features, model.feature_importances_)
-    plt.title("Breast Cancer Feature Importance")
-    plt.ylabel("Importance")
-    plt.xticks(rotation=45, ha='right')
+    # Confusion Matrix
+    plt.figure(figsize=(8,6))
+    cm = confusion_matrix(y_test, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot(include_values=False, cmap='Blues', ax=plt.gca())
+    plt.title("Breast Cancer Confusion Matrix")
     plt.tight_layout()
-    plt.savefig("maps/breast_cancer_feature_importance.png")
+    plt.savefig("maps/breast_cancer_confusion_matrix.png")
     plt.close()
 
 # call function

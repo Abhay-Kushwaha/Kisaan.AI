@@ -7,7 +7,6 @@ def get_analytics_data():
     Returns a dictionary suitable for passing to the analytics.html template.
     """
     base_metrics = "analytics"
-    base_plots = "analytics"  # relative to static/
     maps_folder = "maps"
     models = [
         ("crop_recommendation", "Crop Recommendation"),
@@ -19,9 +18,7 @@ def get_analytics_data():
     analytics_data = {}
     for key, display_name in models:
         metrics_path = os.path.join(base_metrics, f"{key}_metrics.json")
-        plot_path = f"maps/{key}_feature_importance.png"
-        # plot_path = f"{base_plots}/{key}_feature_importance.png"
-        # Collect all maps for this model
+        # Collect all PNGs for this model
         maps_list = []
         if os.path.isdir(maps_folder):
             for fname in os.listdir(maps_folder):
@@ -35,10 +32,6 @@ def get_analytics_data():
         analytics_data[key] = {
             "display_name": display_name,
             "metrics": metrics,
-            "plot": plot_path,
-            #"maps": maps_list
-            "maps": [
-                m for m in maps_list if m != plot_path
-            ],  # Exclude main plot from maps
+            "maps": maps_list
         }
     return analytics_data

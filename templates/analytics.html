@@ -53,10 +53,9 @@
                             <li><strong>{{ k|replace('_', ' ')|capitalize }}:</strong> {{ v }}</li>
                             {% endfor %}
                         </ul>
-                        <h6>Feature Importance / Map:</h6>
-                        <img src="/{{ data.plot }}" alt="Plot" class="img-fluid border rounded mb-3">
+                        <h6>Model Plots:</h6>
                         {% for mapfile in data.maps %}
-                            <img src="/{{ mapfile }}" alt="{{ mapfile }}" class="img-fluid border rounded mb-2">
+                        <img src="/{{ mapfile }}" alt="{{ mapfile }}" class="img-fluid border rounded mb-3">
                         {% endfor %}
                     </div>
                 </div>
