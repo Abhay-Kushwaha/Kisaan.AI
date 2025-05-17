@@ -1,1 +1,1 @@
-Kisaan.ai
+Kisaan.AI
