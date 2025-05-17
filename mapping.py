@@ -36,6 +36,9 @@ def get_analytics_data():
             "display_name": display_name,
             "metrics": metrics,
             "plot": plot_path,
-            "maps": maps_list
+            #"maps": maps_list
+            "maps": [
+                m for m in maps_list if m != plot_path
+            ],  # Exclude main plot from maps
         }
     return analytics_data
