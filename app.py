@@ -1,12 +1,12 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 import pickle
 import numpy as np
 import json
 import joblib
 import pandas as pd
 from disease import predict_disease
-from sklearn.datasets import load_breast_cancer
 from mapping import get_analytics_data
+from gtts import gTTS
 
 app = Flask(__name__)
 
@@ -121,7 +121,7 @@ def fertilizer():
 def disease():
     with open("dataset/symptoms.json", "r") as f:
         symptoms_list = json.load(f)
-    if request.method == 'POST':
+    if request.method == "POST":
         user_symptoms = request.form.getlist("symptoms[]")  # Get symptoms as a list
         days = int(request.form.get("days", 5))
         if not user_symptoms:
@@ -139,8 +139,24 @@ def disease():
                 "medications": details["drugs"]["Medications"],
                 "diet": details["drugs"]["Diet"]
             })
+
+        #**Generate Speech**
+        speech_text = "The predicted disease is: "
+        speech_text += f" {disease}. Description: {details['desc']}. "
+        speech_text += f"Precautions to take: {', '.join(details['prec'])}. "
+        speech_text += f"Recommended medications: {', '.join(details['drugs']['Medications'])}. "
+        speech_text += f"Suggested diet: {', '.join(details['drugs']['Diet'])}. "
+        tts = gTTS(text=speech_text, lang='en')
+        audio_file = "static/audio/speech.mp3"
+        tts.save(audio_file)
+
         return jsonify(response)
+
     return render_template('disease.html', symptoms=symptoms_list)
+
+@app.route('/speak')
+def speak():
+    return send_file("static/audio/speech.mp3")
 
 @app.route('/breast_cancer', methods=['GET', 'POST'])
 def breast_cancer():
