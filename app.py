@@ -7,6 +7,14 @@ import pandas as pd
 from disease import predict_disease
 from mapping import get_analytics_data
 from gtts import gTTS
+import google.generativeai as genai
+def load_api_key():
+    with open("kisaan_env/key.txt", "r") as f:
+        for line in f:
+            if line.strip().startswith("API_KEY"):
+                return line.strip().split("=", 1)[1].strip()
+    raise ValueError("API_KEY not found in kisaan_env/key.txt")
+API_KEY = load_api_key()
 
 app = Flask(__name__)
 
@@ -57,7 +65,9 @@ def crop():
     if request.method == 'POST':
         features = [float(x) for x in request.form.values()]
         prediction = crop_model.predict([np.array(features)])
-        return render_template('crop.html', prediction=prediction[0])
+        crop_name = prediction[0].title()
+        description = get_crop_recommendation_with_description(crop_name)
+        return render_template('crop.html', crop_name=crop_name, description=description)
     return render_template('crop.html')
 
 @app.route('/fertilizer', methods=['GET', 'POST'])
@@ -139,7 +149,7 @@ def disease():
                 "medications": details["drugs"]["Medications"],
                 "diet": details["drugs"]["Diet"]
             })
-
+            
         #**Generate Speech**
         speech_text = "The predicted disease is: "
         speech_text += f" {disease}. Description: {details['desc']}. "
@@ -149,30 +159,12 @@ def disease():
         tts = gTTS(text=speech_text, lang='en')
         audio_file = "static/audio/speech.mp3"
         tts.save(audio_file)
-
         return jsonify(response)
-
     return render_template('disease.html', symptoms=symptoms_list)
 
 @app.route('/speak')
 def speak():
     return send_file("static/audio/speech.mp3")
-
-@app.route('/breast_cancer', methods=['GET', 'POST'])
-def breast_cancer():
-    breast_cancer_model = pickle.load(open("model/breast_cancer_model.pkl", "rb"))
-    features = [
-    'mean_radius', 'mean_texture', 'mean_perimeter', 'mean_area',
-    'mean_smoothness', 'mean_compactness', 'mean_concavity',
-    'mean_concave_points', 'mean_symmetry', 'mean_fractal_dimension'
-]
-    values = []
-    result = None
-    if request.method == 'POST':
-        values = [float(request.form.get(f)) for f in features]
-        prediction = breast_cancer_model.predict([values])[0]
-        result = "Malignant (Cancer)" if prediction == 0 else "Benign (Non-Cancerous)"
-    return render_template('breast_cancer.html', features=features, values=values, result=result)
 
 @app.route('/analytics')
 def analytics():
@@ -182,6 +174,19 @@ def analytics():
 @app.route('/maps/<path:filename>')
 def maps(filename):
     return send_from_directory('maps', filename)
+
+def get_crop_recommendation_with_description(crop_name):
+    genai.configure(api_key=API_KEY)
+    print("API Key set successfully.",API_KEY)
+    model = genai.GenerativeModel("gemini-2.0-flash")
+    chat = model.start_chat()
+    prompt = (
+        f"Give a short description of why '{crop_name}' is suitable for growing in India, "
+        "including the ideal climate, soil, and in which Indian states it is best grown. "
+        "Keep it concise and easy to understand."
+    )
+    res = chat.send_message(prompt)
+    return res.text.replace("**", "").strip()
 
 if __name__ == '__main__':
     app.run(debug=True)

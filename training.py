@@ -7,7 +7,6 @@ import numpy as np
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder, MultiLabelBinarizer, StandardScaler
-from sklearn.datasets import load_breast_cancer
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import (
     accuracy_score, mean_squared_error, r2_score, f1_score, root_mean_squared_error,
@@ -61,12 +60,8 @@ def Train_Crop_Price():
     model = DecisionTreeRegressor(random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    mse = mean_squared_error(y_test, y_pred)
-    rmse = root_mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
     metrics = {
-        "mse": round(mse, 2),
-        "rmse": round(rmse, 2),
         "r2_score": round(r2, 4)
     }
     save_metrics(metrics, "analytics/crop_price_metrics.json")
@@ -172,44 +167,9 @@ def Train_Disease():
     plt.savefig("maps/disease_true_vs_pred.png")
     plt.close()
 
-def Train_Breast_Cancer():
-    data = load_breast_cancer()
-    X = data.data
-    y = data.target
-    feature_names = data.feature_names
-    top_features = [
-        'mean radius', 'mean texture', 'mean perimeter', 'mean area',
-        'mean smoothness', 'mean compactness', 'mean concavity',
-        'mean concave points', 'mean symmetry', 'mean fractal dimension'
-    ]
-    top_indices = [list(feature_names).index(f) for f in top_features]
-    X_top = X[:, top_indices]
-    X_train, X_test, y_train, y_test = train_test_split(X_top, y, test_size=0.2, random_state=42)
-    model = DecisionTreeClassifier(random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    f1 = f1_score(y_test, y_pred)
-    metrics = {
-        "accuracy": round(acc, 4)*100,
-        "f1_score": round(f1, 4)*100
-    }
-    save_metrics(metrics, "analytics/breast_cancer_metrics.json")
-    with open("model/breast_cancer_model.pkl", "wb") as f:
-        pickle.dump(model, f)
-    # Confusion Matrix
-    plt.figure(figsize=(8,6))
-    cm = confusion_matrix(y_test, y_pred)
-    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
-    disp.plot(include_values=False, cmap='Blues', ax=plt.gca())
-    plt.title("Breast Cancer Confusion Matrix")
-    plt.tight_layout()
-    plt.savefig("maps/breast_cancer_confusion_matrix.png")
-    plt.close()
-
 # call function
 # Train_Crop_Recommendation()
 # Train_Crop_Price()
-Train_Disease()
+# Train_Disease()
 # Train_Breast_Cancer()
 # Train_Fertilizer()

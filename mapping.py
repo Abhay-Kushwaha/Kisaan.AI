@@ -2,10 +2,6 @@ import json
 import os
 
 def get_analytics_data():
-    """
-    Loads metrics and plot paths for all models for analytics dashboard.
-    Returns a dictionary suitable for passing to the analytics.html template.
-    """
     base_metrics = "analytics"
     maps_folder = "maps"
     models = [
@@ -13,7 +9,6 @@ def get_analytics_data():
         ("crop_price", "Crop Price"),
         ("fertilizer", "Fertilizer"),
         ("disease", "Disease"),
-        ("breast_cancer", "Breast Cancer"),
     ]
     analytics_data = {}
     for key, display_name in models:

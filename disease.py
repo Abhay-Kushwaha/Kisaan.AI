@@ -9,7 +9,7 @@ def predict_disease(user_symptoms, days):
     user_symptoms = [s.strip().lower() for s in user_symptoms if s.strip()]
     known_symptoms = set(mlb.classes_)
     filtered_symptoms = [s for s in user_symptoms if s in known_symptoms]
-    if not filtered_symptoms:  # If no valid symptoms are found
+    if not filtered_symptoms: 
         return "No valid symptoms detected. Please enter known symptoms.", {}
     input_vector = mlb.transform([filtered_symptoms])
     predicted_diseases = model.predict(input_vector)
@@ -31,14 +31,13 @@ def predict_disease(user_symptoms, days):
             disease_name = row[0].strip().lower()
             precautions_dict[disease_name] = [p.strip().capitalize() for p in row[1:] if p.strip()]
 
-    # Build response
     output = {}
     for disease, _ in sorted_diseases:
         disease_lower = disease.strip().lower()
         output[disease] = {
             "desc": description_dict.get(disease_lower, "No description available"),
             "prec": precautions_dict.get(disease_lower, ["No precautions available"]),
-            "drugs": get_drugs_for_disease(disease_lower)  # Pass lowercase disease name
+            "drugs": get_drugs_for_disease(disease_lower)
         }
     return "If symptoms persist, consult a doctor.", output
 
